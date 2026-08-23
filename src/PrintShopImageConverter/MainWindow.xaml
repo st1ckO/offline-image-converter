@@ -66,7 +66,7 @@
           </Border>
 
           <Grid Grid.Row="1">
-            <DataGrid ItemsSource="{Binding Items}"
+            <DataGrid ItemsSource="{Binding ItemsView}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       CanUserAddRows="False"
@@ -86,7 +86,17 @@
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Customer file" Width="*">
+                <DataGridTemplateColumn Width="*">
+                  <DataGridTemplateColumn.Header>
+                    <Button Padding="0"
+                            Margin="0"
+                            MinHeight="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding DataContext.SortByFilenameCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                            Content="{Binding DataContext.FilenameSortHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                            ToolTip="Sort by customer filename" />
+                  </DataGridTemplateColumn.Header>
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel VerticalAlignment="Center">

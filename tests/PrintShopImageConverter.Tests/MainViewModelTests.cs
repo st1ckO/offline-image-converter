@@ -88,6 +88,38 @@ public sealed class MainViewModelTests : IDisposable
         Assert.False(viewModel.ConvertCommand.CanExecute(null));
     }
 
+    [Fact]
+    public async Task Filename_sort_cycles_ascending_descending_and_original_order()
+    {
+        Directory.CreateDirectory(_directory);
+        var originalNames = new[] { "bravo.webp", "alpha.webp", "charlie.webp" };
+        var paths = originalNames.Select(name => Path.Combine(_directory, name)).ToArray();
+        foreach (var path in paths)
+        {
+            await File.WriteAllBytesAsync(path, []);
+        }
+
+        var viewModel = CreateViewModel(new MemorySettingsStore(new AppSettings()));
+        await viewModel.AddPathsAsync(paths);
+
+        Assert.Equal(originalNames, VisibleNames(viewModel));
+
+        viewModel.SortByFilenameCommand.Execute(null);
+
+        Assert.Equal(FilenameSortMode.Ascending, viewModel.FilenameSortMode);
+        Assert.Equal(["alpha.webp", "bravo.webp", "charlie.webp"], VisibleNames(viewModel));
+
+        viewModel.SortByFilenameCommand.Execute(null);
+
+        Assert.Equal(FilenameSortMode.Descending, viewModel.FilenameSortMode);
+        Assert.Equal(["charlie.webp", "bravo.webp", "alpha.webp"], VisibleNames(viewModel));
+
+        viewModel.SortByFilenameCommand.Execute(null);
+
+        Assert.Equal(FilenameSortMode.Original, viewModel.FilenameSortMode);
+        Assert.Equal(originalNames, VisibleNames(viewModel));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
@@ -102,6 +134,9 @@ public sealed class MainViewModelTests : IDisposable
         new StubConverter(),
         settingsStore,
         new StubDialogs());
+
+    private static string[] VisibleNames(MainViewModel viewModel) =>
+        viewModel.ItemsView.Cast<QueueItemViewModel>().Select(item => item.DisplayName).ToArray();
 
     private sealed class StubInspector : IImageInspector
     {

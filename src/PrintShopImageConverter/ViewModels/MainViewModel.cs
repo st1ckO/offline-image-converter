@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Windows.Data;
 using PrintShopImageConverter.Conversion;
 using PrintShopImageConverter.Infrastructure;
 using PrintShopImageConverter.Settings;
@@ -10,6 +11,13 @@ using PrintShopImageConverter.Settings;
 namespace PrintShopImageConverter.ViewModels;
 
 public sealed record SelectionOption<T>(T Value, string Label);
+
+public enum FilenameSortMode
+{
+    Original,
+    Ascending,
+    Descending
+}
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {
@@ -27,6 +35,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _statusMessage = "Drop customer images here to get started.";
     private bool _isBusy;
     private double _progressPercentage;
+    private FilenameSortMode _filenameSortMode;
 
     public MainViewModel(
         IFileIntakeService intakeService,
@@ -40,6 +49,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _conversionService = conversionService;
         _settingsStore = settingsStore;
         _dialogService = dialogService;
+        ItemsView = CollectionViewSource.GetDefaultView(Items);
 
         AddFilesCommand = new AsyncRelayCommand(AddFilesFromDialogAsync, () => !IsBusy);
         AddFolderCommand = new AsyncRelayCommand(AddFolderFromDialogAsync, () => !IsBusy);
@@ -49,9 +59,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ClearCommand = new RelayCommand(_ => Clear(), _ => !IsBusy && Items.Count > 0);
         RemoveCommand = new RelayCommand(Remove, item => !IsBusy && item is QueueItemViewModel);
         OpenDestinationCommand = new RelayCommand(_ => OpenDestination(), _ => Directory.Exists(DestinationDirectory));
+        SortByFilenameCommand = new RelayCommand(_ => CycleFilenameSort(), _ => !IsBusy);
     }
 
     public ObservableCollection<QueueItemViewModel> Items { get; } = [];
+
+    public ICollectionView ItemsView { get; }
 
     public IReadOnlyList<SelectionOption<OutputFormat>> OutputFormats { get; } =
     [
@@ -142,6 +155,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand RemoveCommand { get; }
 
     public ICommand OpenDestinationCommand { get; }
+
+    public ICommand SortByFilenameCommand { get; }
+
+    public FilenameSortMode FilenameSortMode => _filenameSortMode;
+
+    public string FilenameSortHeader => FilenameSortMode switch
+    {
+        FilenameSortMode.Ascending => "Customer file ↑",
+        FilenameSortMode.Descending => "Customer file ↓",
+        _ => "Customer file"
+    };
 
     public async Task InitializeAsync()
     {
@@ -359,6 +383,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             StatusMessage = exception.Message;
         }
+    }
+
+    private void CycleFilenameSort()
+    {
+        _filenameSortMode = FilenameSortMode switch
+        {
+            FilenameSortMode.Original => FilenameSortMode.Ascending,
+            FilenameSortMode.Ascending => FilenameSortMode.Descending,
+            _ => FilenameSortMode.Original
+        };
+
+        ItemsView.SortDescriptions.Clear();
+        if (FilenameSortMode != FilenameSortMode.Original)
+        {
+            var direction = FilenameSortMode == FilenameSortMode.Ascending
+                ? ListSortDirection.Ascending
+                : ListSortDirection.Descending;
+            ItemsView.SortDescriptions.Add(new SortDescription(nameof(QueueItemViewModel.DisplayName), direction));
+        }
+
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FilenameSortMode)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FilenameSortHeader)));
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
