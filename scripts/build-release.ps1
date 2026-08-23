@@ -27,12 +27,21 @@ if ($SkipInstaller) {
     exit 0
 }
 
-$iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-if (-not $iscc) {
+$isccCommand = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+$isccPath = $isccCommand?.Source
+if (-not $isccPath) {
+    $knownLocations = @(
+        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe')
+    )
+    $isccPath = $knownLocations | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+}
+
+if (-not $isccPath) {
     throw 'Inno Setup 6 was not found. Install it or rerun with -SkipInstaller.'
 }
 
-& $iscc.Source $installerScript
+& $isccPath $installerScript
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
 
 Write-Host 'Release build completed successfully.'
