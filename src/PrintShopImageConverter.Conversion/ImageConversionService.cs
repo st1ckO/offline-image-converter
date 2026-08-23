@@ -11,11 +11,18 @@ public sealed record ConversionResult(
     public bool Succeeded => Error is null;
 }
 
+public sealed record ConversionProgress(
+    string SourcePath,
+    int CompletedFrames,
+    int TotalFrames,
+    string Message);
+
 public interface IConversionService
 {
     Task<ConversionResult> ConvertAsync(
         string sourcePath,
         ConversionOptions options,
+        IProgress<ConversionProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -31,16 +38,20 @@ public sealed class ImageConversionService : IConversionService
     public Task<ConversionResult> ConvertAsync(
         string sourcePath,
         ConversionOptions options,
+        IProgress<ConversionProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentNullException.ThrowIfNull(options);
-        return Task.Run(() => Convert(sourcePath, options.Normalize(), cancellationToken), cancellationToken);
+        return Task.Run(
+            () => Convert(sourcePath, options.Normalize(), progress, cancellationToken),
+            cancellationToken);
     }
 
     private ConversionResult Convert(
         string sourcePath,
         ConversionOptions options,
+        IProgress<ConversionProgress>? progress,
         CancellationToken cancellationToken)
     {
         var fullSourcePath = Path.GetFullPath(sourcePath);
@@ -63,9 +74,19 @@ public sealed class ImageConversionService : IConversionService
 
             var extension = options.OutputFormat == OutputFormat.Jpeg ? ".jpg" : ".png";
             var baseName = Path.GetFileNameWithoutExtension(fullSourcePath);
+            progress?.Report(new ConversionProgress(
+                fullSourcePath,
+                0,
+                images.Count,
+                $"Preparing {images.Count} frame{(images.Count == 1 ? string.Empty : "s")}."));
             for (var index = 0; index < images.Count; index++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                progress?.Report(new ConversionProgress(
+                    fullSourcePath,
+                    index,
+                    images.Count,
+                    $"Converting frame {index + 1} of {images.Count}."));
                 var image = images[index];
                 image.AutoOrient();
                 image.Orientation = OrientationType.TopLeft;
@@ -81,6 +102,11 @@ public sealed class ImageConversionService : IConversionService
                 ConfigureOutput(image, options);
                 WriteAtomically(image, outputPath, cancellationToken);
                 outputPaths.Add(outputPath);
+                progress?.Report(new ConversionProgress(
+                    fullSourcePath,
+                    index + 1,
+                    images.Count,
+                    $"Completed frame {index + 1} of {images.Count}."));
             }
 
             return new ConversionResult(fullSourcePath, outputPaths, []);

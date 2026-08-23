@@ -149,6 +149,47 @@ public sealed class ImageConversionServiceTests : IDisposable
         Assert.Empty(Directory.EnumerateFiles(destination, "*.partial"));
     }
 
+    [Fact]
+    public async Task Convert_reports_progress_for_each_completed_frame()
+    {
+        var source = CreateImage("progress.png", MagickFormat.Png);
+        var updates = new List<ConversionProgress>();
+
+        var result = await new ImageConversionService().ConvertAsync(
+            source,
+            new ConversionOptions
+            {
+                OutputFormat = OutputFormat.Png,
+                DestinationDirectory = Path.Combine(_directory, "output")
+            },
+            new InlineProgress<ConversionProgress>(updates.Add));
+
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Contains(updates, update => update.CompletedFrames == 0 && update.TotalFrames == 1);
+        Assert.Contains(updates, update => update.CompletedFrames == 1 && update.TotalFrames == 1);
+    }
+
+    [Fact]
+    public async Task Convert_honors_cancellation_without_leaving_partial_files()
+    {
+        var source = CreateImage("cancel.png", MagickFormat.Png);
+        var destination = Path.Combine(_directory, "output");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new ImageConversionService().ConvertAsync(
+                source,
+                new ConversionOptions
+                {
+                    DestinationDirectory = destination
+                },
+                cancellationToken: cancellation.Token));
+
+        Assert.False(Directory.Exists(destination) &&
+                     Directory.EnumerateFiles(destination, "*.partial").Any());
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
@@ -170,5 +211,10 @@ public sealed class ImageConversionServiceTests : IDisposable
     {
         Directory.CreateDirectory(_directory);
         return _directory;
+    }
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }
