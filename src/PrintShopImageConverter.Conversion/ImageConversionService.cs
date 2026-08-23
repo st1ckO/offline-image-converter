@@ -21,6 +21,13 @@ public interface IConversionService
 
 public sealed class ImageConversionService : IConversionService
 {
+    private readonly IOutputPathResolver _outputPathResolver;
+
+    public ImageConversionService(IOutputPathResolver? outputPathResolver = null)
+    {
+        _outputPathResolver = outputPathResolver ?? new OutputPathResolver();
+    }
+
     public Task<ConversionResult> ConvertAsync(
         string sourcePath,
         ConversionOptions options,
@@ -31,12 +38,13 @@ public sealed class ImageConversionService : IConversionService
         return Task.Run(() => Convert(sourcePath, options.Normalize(), cancellationToken), cancellationToken);
     }
 
-    private static ConversionResult Convert(
+    private ConversionResult Convert(
         string sourcePath,
         ConversionOptions options,
         CancellationToken cancellationToken)
     {
         var fullSourcePath = Path.GetFullPath(sourcePath);
+        var outputPaths = new List<string>();
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -55,8 +63,6 @@ public sealed class ImageConversionService : IConversionService
 
             var extension = options.OutputFormat == OutputFormat.Jpeg ? ".jpg" : ".png";
             var baseName = Path.GetFileNameWithoutExtension(fullSourcePath);
-            var outputPaths = new List<string>(images.Count);
-
             for (var index = 0; index < images.Count; index++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -67,12 +73,13 @@ public sealed class ImageConversionService : IConversionService
                 var numberedName = images.Count == 1
                     ? baseName
                     : $"{baseName}_{index + 1:000}";
-                var outputPath = Path.Combine(
+                var outputPath = _outputPathResolver.GetUniquePath(
                     options.DestinationDirectory,
-                    numberedName + extension);
+                    numberedName,
+                    extension);
 
                 ConfigureOutput(image, options);
-                image.Write(outputPath);
+                WriteAtomically(image, outputPath, cancellationToken);
                 outputPaths.Add(outputPath);
             }
 
@@ -84,7 +91,29 @@ public sealed class ImageConversionService : IConversionService
         }
         catch (Exception exception) when (exception is MagickException or IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException)
         {
-            return new ConversionResult(fullSourcePath, [], [], ToFriendlyMessage(exception));
+            return new ConversionResult(fullSourcePath, outputPaths, [], ToFriendlyMessage(exception));
+        }
+    }
+
+    private static void WriteAtomically(
+        IMagickImage<ushort> image,
+        string outputPath,
+        CancellationToken cancellationToken)
+    {
+        var temporaryPath = outputPath + $".{Guid.NewGuid():N}.partial";
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            image.Write(temporaryPath);
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(temporaryPath, outputPath);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
         }
     }
 

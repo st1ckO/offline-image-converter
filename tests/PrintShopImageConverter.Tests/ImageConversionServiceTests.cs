@@ -128,6 +128,27 @@ public sealed class ImageConversionServiceTests : IDisposable
         Assert.All(result.OutputPaths, path => Assert.True(File.Exists(path)));
     }
 
+    [Fact]
+    public async Task Convert_never_overwrites_an_existing_output()
+    {
+        var source = CreateImage("customer.png", MagickFormat.Png);
+        var destination = Path.Combine(CreateDirectory(), "output");
+        Directory.CreateDirectory(destination);
+        var existing = Path.Combine(destination, "customer.jpg");
+        await File.WriteAllTextAsync(existing, "keep me");
+
+        var result = await new ImageConversionService().ConvertAsync(source, new ConversionOptions
+        {
+            OutputFormat = OutputFormat.Jpeg,
+            DestinationDirectory = destination
+        });
+
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal("keep me", await File.ReadAllTextAsync(existing));
+        Assert.EndsWith("customer_2.jpg", Assert.Single(result.OutputPaths));
+        Assert.Empty(Directory.EnumerateFiles(destination, "*.partial"));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
