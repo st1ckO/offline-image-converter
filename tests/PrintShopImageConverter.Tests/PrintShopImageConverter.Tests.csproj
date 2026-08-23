@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -19,6 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PrintShopImageConverter.Conversion\PrintShopImageConverter.Conversion.csproj" />
     <ProjectReference Include="..\..\src\PrintShopImageConverter.Settings\PrintShopImageConverter.Settings.csproj" />
+    <ProjectReference Include="..\..\src\PrintShopImageConverter\PrintShopImageConverter.csproj" />
   </ItemGroup>
 </Project>
-

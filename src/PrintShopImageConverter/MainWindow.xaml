@@ -6,14 +6,183 @@
         Height="720"
         MinWidth="900"
         MinHeight="560"
-        WindowStartupLocation="CenterScreen">
-  <Grid Background="#F4F5F7">
-    <TextBlock HorizontalAlignment="Center"
-               VerticalAlignment="Center"
-               FontSize="28"
-               FontWeight="SemiBold"
-               Foreground="#222831"
-               Text="Print Shop Image Converter" />
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    <Style TargetType="Button">
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="MinHeight" Value="34" />
+    </Style>
+    <Style TargetType="TextBlock">
+      <Setter Property="Foreground" Value="#25313C" />
+    </Style>
+  </Window.Resources>
+
+  <Grid Background="#F4F6F8">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <Border Grid.Row="0" Padding="24,18" Background="#17324D">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Left">
+          <TextBlock FontSize="25" FontWeight="SemiBold" Foreground="White" Text="Print Shop Image Converter" />
+          <TextBlock Margin="0,4,0,0" Foreground="#C8D8E8" Text="Offline batch conversion for customer artwork" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button Command="{Binding AddFilesCommand}" Content="Add files" />
+          <Button Command="{Binding AddFolderCommand}" Content="Add folder" />
+          <Button Command="{Binding ClearCommand}" Content="Clear" Margin="0" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="20">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="310" />
+      </Grid.ColumnDefinitions>
+
+      <Border Grid.Column="0" Margin="0,0,16,0" Background="White" BorderBrush="#D8DEE5" BorderThickness="1" CornerRadius="6">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <Border Grid.Row="0" Padding="18,14" Background="#FAFBFC" BorderBrush="#E4E8EC" BorderThickness="0,0,0,1">
+            <DockPanel>
+              <TextBlock FontSize="16" FontWeight="SemiBold" Text="Conversion queue" />
+              <TextBlock DockPanel.Dock="Right" Foreground="#607080" Text="{Binding Items.Count, StringFormat={}{0} items}" />
+            </DockPanel>
+          </Border>
+
+          <Grid Grid.Row="1">
+            <DataGrid ItemsSource="{Binding Items}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      RowHeaderWidth="0"
+                      BorderThickness="0"
+                      RowHeight="76">
+              <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Preview" Width="84">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <Border Width="64" Height="56" Background="#EDF1F4" CornerRadius="3">
+                        <Image Source="{Binding Thumbnail}" Stretch="Uniform" />
+                      </Border>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Customer file" Width="*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Margin="0,4,0,0" Foreground="#637383" Text="{Binding Details}" />
+                        <TextBlock Margin="0,3,0,0" Foreground="#7A4D00" FontSize="11" Text="{Binding Diagnostic}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Status" Width="145">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{Binding StatusBrush}" Text="{Binding StatusText}" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Width="64">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <Button Padding="8,4" Margin="0" Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Content="Remove" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+              <TextBlock HorizontalAlignment="Center" FontSize="20" FontWeight="SemiBold" Foreground="#5A6978" Text="Drop images or folders here" />
+              <TextBlock Margin="0,7,0,0" Foreground="#7B8996" Text="HEIC, HEIF, AVIF, WebP, JPG, PNG, TIFF, BMP, and GIF" />
+              <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding Items.Count}" Value="0">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </StackPanel.Style>
+            </StackPanel>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Padding="20" Background="White" BorderBrush="#D8DEE5" BorderThickness="1" CornerRadius="6">
+        <StackPanel>
+          <TextBlock FontSize="17" FontWeight="SemiBold" Text="Output settings" />
+
+          <TextBlock Margin="0,20,0,6" FontWeight="SemiBold" Text="Format" />
+          <ComboBox ItemsSource="{Binding OutputFormats}"
+                    DisplayMemberPath="Label"
+                    SelectedValuePath="Value"
+                    SelectedValue="{Binding OutputFormat}" />
+
+          <TextBlock Margin="0,18,0,3" FontWeight="SemiBold" Text="JPG quality" />
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Width="35" TextAlignment="Right" Text="{Binding JpegQuality}" />
+            <Slider Minimum="1" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding JpegQuality}" />
+          </DockPanel>
+
+          <TextBlock Margin="0,18,0,6" FontWeight="SemiBold" Text="Color handling" />
+          <ComboBox ItemsSource="{Binding ColorOptions}"
+                    DisplayMemberPath="Label"
+                    SelectedValuePath="Value"
+                    SelectedValue="{Binding ColorHandling}" />
+          <TextBlock Margin="0,6,0,0" FontSize="11" Foreground="#6E7B87" TextWrapping="Wrap" Text="sRGB is safest for most print software. Preserve profiles only in a color-managed workflow." />
+
+          <TextBlock Margin="0,18,0,6" FontWeight="SemiBold" Text="Output folder" />
+          <TextBox Padding="8,6" IsReadOnly="True" Text="{Binding DestinationDirectory}" TextWrapping="Wrap" />
+          <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+            <Button Command="{Binding ChooseDestinationCommand}" Content="Choose folder" />
+            <Button Command="{Binding OpenDestinationCommand}" Content="Open" Margin="0" />
+          </StackPanel>
+
+          <Border Margin="0,20,0,0" Padding="12" Background="#F1F6FA" CornerRadius="4">
+            <TextBlock Foreground="#3B5268" TextWrapping="Wrap" Text="Original files are never changed. Existing output names receive a numeric suffix." />
+          </Border>
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="2" Padding="20,13" Background="White" BorderBrush="#D8DEE5" BorderThickness="0,1,0,0">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" Margin="0,0,20,0">
+          <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+          <ProgressBar Margin="0,7,0,0" Height="7" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Command="{Binding CancelCommand}" Content="Cancel" />
+          <Button Command="{Binding ConvertCommand}" Margin="0" Padding="22,9" FontWeight="SemiBold" Content="Convert batch" />
+        </StackPanel>
+      </Grid>
+    </Border>
   </Grid>
 </Window>
-
