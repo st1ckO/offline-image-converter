@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Print Shop Image Converter</AssemblyName>
+    <RootNamespace>PrintShopImageConverter</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PrintShopImageConverter.Conversion\PrintShopImageConverter.Conversion.csproj" />
+    <ProjectReference Include="..\PrintShopImageConverter.Settings\PrintShopImageConverter.Settings.csproj" />
+  </ItemGroup>
+</Project>
+
