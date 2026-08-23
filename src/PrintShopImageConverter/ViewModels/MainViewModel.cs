@@ -162,9 +162,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public string FilenameSortHeader => FilenameSortMode switch
     {
-        FilenameSortMode.Ascending => "Customer file ↑",
-        FilenameSortMode.Descending => "Customer file ↓",
-        _ => "Customer file"
+        FilenameSortMode.Ascending => "File ↑",
+        FilenameSortMode.Descending => "File ↓",
+        _ => "File"
     };
 
     public async Task InitializeAsync()

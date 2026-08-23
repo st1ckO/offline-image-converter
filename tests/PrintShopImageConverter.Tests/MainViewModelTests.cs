@@ -103,20 +103,24 @@ public sealed class MainViewModelTests : IDisposable
         await viewModel.AddPathsAsync(paths);
 
         Assert.Equal(originalNames, VisibleNames(viewModel));
+        Assert.Equal("File", viewModel.FilenameSortHeader);
 
         viewModel.SortByFilenameCommand.Execute(null);
 
         Assert.Equal(FilenameSortMode.Ascending, viewModel.FilenameSortMode);
+        Assert.Equal("File ↑", viewModel.FilenameSortHeader);
         Assert.Equal(["alpha.webp", "bravo.webp", "charlie.webp"], VisibleNames(viewModel));
 
         viewModel.SortByFilenameCommand.Execute(null);
 
         Assert.Equal(FilenameSortMode.Descending, viewModel.FilenameSortMode);
+        Assert.Equal("File ↓", viewModel.FilenameSortHeader);
         Assert.Equal(["charlie.webp", "bravo.webp", "alpha.webp"], VisibleNames(viewModel));
 
         viewModel.SortByFilenameCommand.Execute(null);
 
         Assert.Equal(FilenameSortMode.Original, viewModel.FilenameSortMode);
+        Assert.Equal("File", viewModel.FilenameSortHeader);
         Assert.Equal(originalNames, VisibleNames(viewModel));
     }
 
