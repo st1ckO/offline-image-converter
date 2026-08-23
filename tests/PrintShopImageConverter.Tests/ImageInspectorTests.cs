@@ -12,6 +12,14 @@ public sealed class ImageInspectorTests : IDisposable
         Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public void Bundled_engine_exposes_every_required_input_decoder()
+    {
+        var missingFormats = new ImageInspector().GetMissingRequiredFormats();
+
+        Assert.Empty(missingFormats);
+    }
+
+    [Fact]
     public async Task Inspect_returns_queue_metadata_and_thumbnail()
     {
         var path = PathFor("sample.png");
