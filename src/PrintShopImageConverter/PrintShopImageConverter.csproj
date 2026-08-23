@@ -7,12 +7,14 @@
     <RootNamespace>PrintShopImageConverter</RootNamespace>
     <Version>1.0.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PrintShopImageConverter.Conversion\PrintShopImageConverter.Conversion.csproj" />
     <ProjectReference Include="..\PrintShopImageConverter.Settings\PrintShopImageConverter.Settings.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Assets\AppIcon.ico" />
     <None Include="..\..\THIRD-PARTY-NOTICES.txt"
           Link="THIRD-PARTY-NOTICES.txt"
           CopyToOutputDirectory="PreserveNewest"

@@ -20,6 +20,7 @@ OutputBaseFilename=PrintShopImageConverter-Setup-{#AppVersion}-x64
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\src\PrintShopImageConverter\Assets\AppIcon.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 SetupLogging=yes
 
