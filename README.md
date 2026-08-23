@@ -20,7 +20,7 @@ Outputs:
 - JPG with adjustable quality, 4:4:4 sampling, optimized coding, and a white background for transparent pixels
 - Lossless PNG with transparency and up to 16-bit channel depth
 
-Animated and multi-image sources are exported as numbered still files. The app never changes source files or overwrites existing outputs.
+Converted files receive a `_converted` suffix. Animated and multi-image sources are exported as numbered still files such as `animation_001_converted.png`. The app never changes source files or overwrites existing outputs.
 
 ## Shop workflow
 

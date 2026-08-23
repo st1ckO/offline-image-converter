@@ -92,8 +92,8 @@ public sealed class ImageConversionService : IConversionService
                 image.Orientation = OrientationType.TopLeft;
 
                 var numberedName = images.Count == 1
-                    ? baseName
-                    : $"{baseName}_{index + 1:000}";
+                    ? $"{baseName}_converted"
+                    : $"{baseName}_{index + 1:000}_converted";
                 var outputPath = _outputPathResolver.GetUniquePath(
                     options.DestinationDirectory,
                     numberedName,

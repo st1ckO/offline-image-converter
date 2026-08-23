@@ -31,7 +31,7 @@ public sealed class ImageConversionServiceTests : IDisposable
 
         Assert.True(result.Succeeded, result.Error);
         var output = Assert.Single(result.OutputPaths);
-        Assert.EndsWith(expectedExtension, output, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith($"source_converted{expectedExtension}", output, StringComparison.OrdinalIgnoreCase);
         using var image = new MagickImage(output);
         Assert.Equal(expectedFormat, image.Format);
         Assert.Equal(48u, image.Width);
@@ -122,9 +122,9 @@ public sealed class ImageConversionServiceTests : IDisposable
         Assert.Equal(3, result.OutputPaths.Count);
         Assert.Collection(
             result.OutputPaths,
-            path => Assert.EndsWith("customer-animation_001.png", path),
-            path => Assert.EndsWith("customer-animation_002.png", path),
-            path => Assert.EndsWith("customer-animation_003.png", path));
+            path => Assert.EndsWith("customer-animation_001_converted.png", path),
+            path => Assert.EndsWith("customer-animation_002_converted.png", path),
+            path => Assert.EndsWith("customer-animation_003_converted.png", path));
         Assert.All(result.OutputPaths, path => Assert.True(File.Exists(path)));
     }
 
@@ -134,7 +134,7 @@ public sealed class ImageConversionServiceTests : IDisposable
         var source = CreateImage("customer.png", MagickFormat.Png);
         var destination = Path.Combine(CreateDirectory(), "output");
         Directory.CreateDirectory(destination);
-        var existing = Path.Combine(destination, "customer.jpg");
+        var existing = Path.Combine(destination, "customer_converted.jpg");
         await File.WriteAllTextAsync(existing, "keep me");
 
         var result = await new ImageConversionService().ConvertAsync(source, new ConversionOptions
@@ -145,7 +145,7 @@ public sealed class ImageConversionServiceTests : IDisposable
 
         Assert.True(result.Succeeded, result.Error);
         Assert.Equal("keep me", await File.ReadAllTextAsync(existing));
-        Assert.EndsWith("customer_2.jpg", Assert.Single(result.OutputPaths));
+        Assert.EndsWith("customer_converted_2.jpg", Assert.Single(result.OutputPaths));
         Assert.Empty(Directory.EnumerateFiles(destination, "*.partial"));
     }
 
