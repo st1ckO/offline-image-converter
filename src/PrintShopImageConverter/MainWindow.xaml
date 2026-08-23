@@ -176,7 +176,7 @@
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" Margin="0,0,20,0">
           <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
-          <ProgressBar Margin="0,7,0,0" Height="7" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage}" />
+          <ProgressBar Margin="0,7,0,0" Height="7" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage, Mode=OneWay}" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
           <Button Command="{Binding CancelCommand}" Content="Cancel" />
