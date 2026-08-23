@@ -49,6 +49,7 @@ public sealed class ImageConversionService : IConversionService
             using var image = new MagickImage(fullSourcePath);
             cancellationToken.ThrowIfCancellationRequested();
             image.AutoOrient();
+            image.Orientation = OrientationType.TopLeft;
 
             var extension = options.OutputFormat == OutputFormat.Jpeg ? ".jpg" : ".png";
             var outputPath = Path.Combine(
@@ -72,8 +73,17 @@ public sealed class ImageConversionService : IConversionService
 
     private static void ConfigureOutput(MagickImage image, ConversionOptions options)
     {
+        ApplyColorHandling(image, options.ColorHandling);
+
         if (options.OutputFormat == OutputFormat.Jpeg)
         {
+            if (image.HasAlpha)
+            {
+                image.BackgroundColor = new MagickColor(options.BackgroundColor);
+                image.Alpha(AlphaOption.Remove);
+                image.Alpha(AlphaOption.Off);
+            }
+
             image.Format = MagickFormat.Jpeg;
             image.Quality = (uint)options.JpegQuality;
             image.Settings.SetDefine(MagickFormat.Jpeg, "optimize-coding", true);
@@ -84,6 +94,25 @@ public sealed class ImageConversionService : IConversionService
 
         image.Format = MagickFormat.Png;
         image.Settings.Compression = CompressionMethod.Zip;
+        image.Settings.SetDefine(MagickFormat.Png, "preserve-iCCP", true);
+    }
+
+    private static void ApplyColorHandling(MagickImage image, ColorHandling colorHandling)
+    {
+        if (colorHandling == ColorHandling.PreserveSourceProfile)
+        {
+            return;
+        }
+
+        var sourceProfile = image.GetColorProfile();
+        if (sourceProfile is null)
+        {
+            image.ColorSpace = ColorSpace.sRGB;
+            image.SetProfile(ColorProfiles.SRGB);
+            return;
+        }
+
+        image.TransformColorSpace(ColorProfiles.SRGB);
     }
 
     private static string ToFriendlyMessage(Exception exception) => exception switch

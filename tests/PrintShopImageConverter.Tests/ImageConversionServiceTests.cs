@@ -50,6 +50,56 @@ public sealed class ImageConversionServiceTests : IDisposable
         Assert.Empty(result.OutputPaths);
     }
 
+    [Fact]
+    public async Task Convert_composites_transparency_over_white_for_jpeg()
+    {
+        var source = Path.Combine(CreateDirectory(), "transparent.png");
+        using (var image = new MagickImage(MagickColors.Transparent, 8, 8))
+        {
+            image.Write(source, MagickFormat.Png);
+        }
+
+        var result = await new ImageConversionService().ConvertAsync(source, new ConversionOptions
+        {
+            OutputFormat = OutputFormat.Jpeg,
+            DestinationDirectory = Path.Combine(_directory, "output")
+        });
+
+        Assert.True(result.Succeeded, result.Error);
+        using var output = new MagickImage(Assert.Single(result.OutputPaths));
+        Assert.False(output.HasAlpha);
+        using var pixels = output.GetPixels();
+        var color = pixels.GetPixel(0, 0).ToColor();
+        Assert.NotNull(color);
+        Assert.True(color.R > 60000 && color.G > 60000 && color.B > 60000);
+    }
+
+    [Fact]
+    public async Task Convert_embeds_srgb_and_preserves_density_metadata()
+    {
+        var source = Path.Combine(CreateDirectory(), "metadata.png");
+        using (var image = new MagickImage(MagickColors.Orange, 8, 8))
+        {
+            image.Density = new Density(300, 300, DensityUnit.PixelsPerInch);
+            image.Write(source, MagickFormat.Png);
+        }
+
+        var result = await new ImageConversionService().ConvertAsync(source, new ConversionOptions
+        {
+            OutputFormat = OutputFormat.Png,
+            ColorHandling = ColorHandling.ConvertToSrgb,
+            DestinationDirectory = Path.Combine(_directory, "output")
+        });
+
+        Assert.True(result.Succeeded, result.Error);
+        using var output = new MagickImage(Assert.Single(result.OutputPaths));
+        var profile = output.GetColorProfile();
+        Assert.NotNull(profile);
+        var density = output.Density.ChangeUnits(DensityUnit.PixelsPerInch);
+        Assert.InRange(density.X, 299.5, 300.5);
+        Assert.InRange(density.Y, 299.5, 300.5);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
@@ -60,10 +110,16 @@ public sealed class ImageConversionServiceTests : IDisposable
 
     private string CreateImage(string filename, MagickFormat format)
     {
-        Directory.CreateDirectory(_directory);
+        CreateDirectory();
         var path = Path.Combine(_directory, filename);
         using var image = new MagickImage(MagickColors.CornflowerBlue, 48, 32);
         image.Write(path, format);
         return path;
+    }
+
+    private string CreateDirectory()
+    {
+        Directory.CreateDirectory(_directory);
+        return _directory;
     }
 }
