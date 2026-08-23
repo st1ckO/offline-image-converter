@@ -68,8 +68,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public OutputFormat OutputFormat
     {
         get => _outputFormat;
-        set => SetField(ref _outputFormat, value);
+        set
+        {
+            if (SetField(ref _outputFormat, value))
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsJpegQualityEnabled)));
+            }
+        }
     }
+
+    public bool IsJpegQualityEnabled => OutputFormat == OutputFormat.Jpeg;
 
     public ColorHandling ColorHandling
     {
@@ -231,7 +239,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task ConvertAllAsync()
     {
-        var candidates = Items.Where(item => item.Status != SourceStatus.Failed).ToArray();
+        var candidates = Items
+            .Where(item => item.Status is not SourceStatus.Failed and not SourceStatus.Completed)
+            .ToArray();
         if (candidates.Length == 0 || string.IsNullOrWhiteSpace(DestinationDirectory))
         {
             StatusMessage = "Add at least one readable image and choose an output folder.";
@@ -308,7 +318,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     private bool CanConvert() =>
-        !IsBusy && Items.Any(item => item.Status != SourceStatus.Failed) &&
+        !IsBusy &&
+        Items.Any(item => item.Status is not SourceStatus.Failed and not SourceStatus.Completed) &&
         !string.IsNullOrWhiteSpace(DestinationDirectory);
 
     private ConversionOptions CreateOptions() => new()

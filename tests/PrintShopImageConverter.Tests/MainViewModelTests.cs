@@ -52,6 +52,42 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(SourceStatus.Ready, item.Status);
     }
 
+    [Fact]
+    public void Output_format_controls_jpeg_quality_availability()
+    {
+        var viewModel = CreateViewModel(new MemorySettingsStore(new AppSettings()));
+
+        Assert.True(viewModel.IsJpegQualityEnabled);
+
+        viewModel.OutputFormat = OutputFormat.Png;
+
+        Assert.False(viewModel.IsJpegQualityEnabled);
+
+        viewModel.OutputFormat = OutputFormat.Jpeg;
+
+        Assert.True(viewModel.IsJpegQualityEnabled);
+    }
+
+    [Fact]
+    public void Convert_is_disabled_when_all_readable_items_are_completed()
+    {
+        var viewModel = CreateViewModel(new MemorySettingsStore(new AppSettings()));
+        viewModel.DestinationDirectory = _directory;
+        var item = new QueueItemViewModel(new SourceItem
+        {
+            Path = Path.Combine(_directory, "customer.webp"),
+            DisplayName = "customer.webp",
+            Format = "WEBP"
+        });
+        viewModel.Items.Add(item);
+
+        Assert.True(viewModel.ConvertCommand.CanExecute(null));
+
+        item.Status = SourceStatus.Completed;
+
+        Assert.False(viewModel.ConvertCommand.CanExecute(null));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))

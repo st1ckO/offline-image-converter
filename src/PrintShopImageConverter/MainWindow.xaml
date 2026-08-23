@@ -33,14 +33,9 @@
 
     <Border Grid.Row="0" Padding="24,18" Background="#17324D">
       <DockPanel>
-        <StackPanel DockPanel.Dock="Left">
+        <StackPanel>
           <TextBlock FontSize="25" FontWeight="SemiBold" Foreground="White" Text="Print Shop Image Converter" />
-          <TextBlock Margin="0,4,0,0" Foreground="#C8D8E8" Text="Offline batch conversion for customer artwork" />
-        </StackPanel>
-        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-          <Button Command="{Binding AddFilesCommand}" Content="Add files" />
-          <Button Command="{Binding AddFolderCommand}" Content="Add folder" />
-          <Button Command="{Binding ClearCommand}" Content="Clear" Margin="0" />
+          <TextBlock Margin="0,4,0,0" Foreground="#C8D8E8" Text="Offline batch converter for printing images" />
         </StackPanel>
       </DockPanel>
     </Border>
@@ -59,8 +54,14 @@
           </Grid.RowDefinitions>
           <Border Grid.Row="0" Padding="18,14" Background="#FAFBFC" BorderBrush="#E4E8EC" BorderThickness="0,0,0,1">
             <DockPanel>
-              <TextBlock FontSize="16" FontWeight="SemiBold" Text="Conversion queue" />
-              <TextBlock DockPanel.Dock="Right" Foreground="#607080" Text="{Binding Items.Count, StringFormat={}{0} items}" />
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Command="{Binding AddFilesCommand}" Content="Add files" />
+                <Button Command="{Binding AddFolderCommand}" Content="Add folder" Margin="0" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Conversion queue" />
+                <TextBlock Margin="5,0,0,0" FontSize="16" Foreground="#607080" Text="{Binding Items.Count, StringFormat={}({0})}" />
+              </StackPanel>
             </DockPanel>
           </Border>
 
@@ -144,7 +145,7 @@
           <TextBlock Margin="0,18,0,3" FontWeight="SemiBold" Text="JPG quality" />
           <DockPanel>
             <TextBlock DockPanel.Dock="Right" Width="35" TextAlignment="Right" Text="{Binding JpegQuality}" />
-            <Slider Minimum="1" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding JpegQuality}" />
+            <Slider Minimum="1" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding IsJpegQualityEnabled}" Value="{Binding JpegQuality}" />
           </DockPanel>
 
           <TextBlock Margin="0,18,0,6" FontWeight="SemiBold" Text="Color handling" />
@@ -179,6 +180,7 @@
           <ProgressBar Margin="0,7,0,0" Height="7" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage, Mode=OneWay}" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Command="{Binding ClearCommand}" Content="Clear" />
           <Button Command="{Binding CancelCommand}" Content="Cancel" />
           <Button Command="{Binding ConvertCommand}" Margin="0" Padding="22,9" FontWeight="SemiBold" Content="Convert batch" />
         </StackPanel>
