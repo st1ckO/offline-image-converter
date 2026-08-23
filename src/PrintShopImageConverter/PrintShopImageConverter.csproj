@@ -5,10 +5,11 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>Print Shop Image Converter</AssemblyName>
     <RootNamespace>PrintShopImageConverter</RootNamespace>
+    <Version>1.0.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PrintShopImageConverter.Conversion\PrintShopImageConverter.Conversion.csproj" />
     <ProjectReference Include="..\PrintShopImageConverter.Settings\PrintShopImageConverter.Settings.csproj" />
   </ItemGroup>
 </Project>
-
