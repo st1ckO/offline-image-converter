@@ -46,32 +46,49 @@ public sealed class ImageConversionService : IConversionService
             }
 
             Directory.CreateDirectory(options.DestinationDirectory);
-            using var image = new MagickImage(fullSourcePath);
+            using var images = new MagickImageCollection(fullSourcePath);
             cancellationToken.ThrowIfCancellationRequested();
-            image.AutoOrient();
-            image.Orientation = OrientationType.TopLeft;
+            if (images.Count == 0)
+            {
+                throw new InvalidDataException("The image contains no readable frames.");
+            }
 
             var extension = options.OutputFormat == OutputFormat.Jpeg ? ".jpg" : ".png";
-            var outputPath = Path.Combine(
-                options.DestinationDirectory,
-                Path.GetFileNameWithoutExtension(fullSourcePath) + extension);
+            var baseName = Path.GetFileNameWithoutExtension(fullSourcePath);
+            var outputPaths = new List<string>(images.Count);
 
-            ConfigureOutput(image, options);
-            image.Write(outputPath);
+            for (var index = 0; index < images.Count; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var image = images[index];
+                image.AutoOrient();
+                image.Orientation = OrientationType.TopLeft;
 
-            return new ConversionResult(fullSourcePath, [outputPath], []);
+                var numberedName = images.Count == 1
+                    ? baseName
+                    : $"{baseName}_{index + 1:000}";
+                var outputPath = Path.Combine(
+                    options.DestinationDirectory,
+                    numberedName + extension);
+
+                ConfigureOutput(image, options);
+                image.Write(outputPath);
+                outputPaths.Add(outputPath);
+            }
+
+            return new ConversionResult(fullSourcePath, outputPaths, []);
         }
         catch (OperationCanceledException)
         {
             throw;
         }
-        catch (Exception exception) when (exception is MagickException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception exception) when (exception is MagickException or IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException)
         {
             return new ConversionResult(fullSourcePath, [], [], ToFriendlyMessage(exception));
         }
     }
 
-    private static void ConfigureOutput(MagickImage image, ConversionOptions options)
+    private static void ConfigureOutput(IMagickImage<ushort> image, ConversionOptions options)
     {
         ApplyColorHandling(image, options.ColorHandling);
 
@@ -97,7 +114,7 @@ public sealed class ImageConversionService : IConversionService
         image.Settings.SetDefine(MagickFormat.Png, "preserve-iCCP", true);
     }
 
-    private static void ApplyColorHandling(MagickImage image, ColorHandling colorHandling)
+    private static void ApplyColorHandling(IMagickImage<ushort> image, ColorHandling colorHandling)
     {
         if (colorHandling == ColorHandling.PreserveSourceProfile)
         {

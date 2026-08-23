@@ -100,6 +100,34 @@ public sealed class ImageConversionServiceTests : IDisposable
         Assert.InRange(density.Y, 299.5, 300.5);
     }
 
+    [Fact]
+    public async Task Convert_exports_every_frame_with_numbered_names()
+    {
+        var source = Path.Combine(CreateDirectory(), "customer-animation.gif");
+        using (var frames = new MagickImageCollection())
+        {
+            frames.Add(new MagickImage(MagickColors.Red, 12, 10));
+            frames.Add(new MagickImage(MagickColors.Green, 12, 10));
+            frames.Add(new MagickImage(MagickColors.Blue, 12, 10));
+            frames.Write(source, MagickFormat.Gif);
+        }
+
+        var result = await new ImageConversionService().ConvertAsync(source, new ConversionOptions
+        {
+            OutputFormat = OutputFormat.Png,
+            DestinationDirectory = Path.Combine(_directory, "output")
+        });
+
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Equal(3, result.OutputPaths.Count);
+        Assert.Collection(
+            result.OutputPaths,
+            path => Assert.EndsWith("customer-animation_001.png", path),
+            path => Assert.EndsWith("customer-animation_002.png", path),
+            path => Assert.EndsWith("customer-animation_003.png", path));
+        Assert.All(result.OutputPaths, path => Assert.True(File.Exists(path)));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
