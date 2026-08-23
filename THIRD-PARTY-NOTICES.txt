@@ -1,0 +1,26 @@
+Print Shop Image Converter - Third-Party Notices
+================================================
+
+This application includes the following third-party software. These components
+remain subject to their respective licenses.
+
+Magick.NET 14.16.0
+------------------
+Copyright (c) 2013-2026 Dirk Lemstra and contributors.
+
+Magick.NET is distributed under the Apache License, Version 2.0.
+License: https://github.com/dlemstra/Magick.NET/blob/main/LICENSE
+Source: https://github.com/dlemstra/Magick.NET
+
+ImageMagick
+-----------
+Copyright (c) 1999 ImageMagick Studio LLC and contributors.
+
+ImageMagick is distributed under the ImageMagick License.
+License: https://imagemagick.org/license/
+Source: https://github.com/ImageMagick/ImageMagick
+
+Magick.NET includes ImageMagick and delegate libraries used to decode and encode
+supported image formats. Their notices and source information are available from
+the Magick.NET and ImageMagick projects above. No endorsement by the named
+projects or contributors is implied.

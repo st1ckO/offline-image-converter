@@ -12,4 +12,10 @@
     <ProjectReference Include="..\PrintShopImageConverter.Conversion\PrintShopImageConverter.Conversion.csproj" />
     <ProjectReference Include="..\PrintShopImageConverter.Settings\PrintShopImageConverter.Settings.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\THIRD-PARTY-NOTICES.txt"
+          Link="THIRD-PARTY-NOTICES.txt"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
