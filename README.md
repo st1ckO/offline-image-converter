@@ -1,6 +1,6 @@
 # Print Shop Image Converter
 
-Print Shop Image Converter is an offline Windows desktop utility for turning customer-supplied images into easy-to-use JPG or PNG files. It is designed for batch work in a printing shop and does not upload files, require an account, or call an online service.
+Print Shop Image Converter is an offline Windows desktop utility for turning customer-supplied images and PDFs into easy-to-use JPG or PNG files. It is designed for batch work in a printing shop and does not upload files, require an account, or call an online service.
 
 ## Supported formats
 
@@ -14,19 +14,20 @@ Inputs:
 - TIFF
 - BMP
 - GIF
+- PDF
 
 Outputs:
 
 - JPG with adjustable quality, 4:4:4 sampling, optimized coding, and a white background for transparent pixels
 - Lossless PNG with transparency and up to 16-bit channel depth
 
-Converted files receive a `_converted` suffix. Animated and multi-image sources are exported as numbered still files such as `animation_001_converted.png`. The app never changes source files or overwrites existing outputs.
+Converted files receive a `_converted` suffix. Animated images, multi-image sources, and PDFs are exported as numbered still files such as `proof_001_converted.png`. Each PDF page is rendered at 300 DPI in its original order. The app never changes source files or overwrites existing outputs.
 
 ## Shop workflow
 
 1. Open **Print Shop Image Converter**.
 2. Drop customer files or folders onto the queue, or use **Add files** and **Add folder**.
-3. Check the detected format, dimensions, frame count, and preview.
+3. Check the detected format, dimensions, frame or page count, and preview.
 4. Choose JPG or PNG, color handling, and an output folder.
 5. Select **Convert batch**.
 6. Use **Open** to view the completed output folder.
@@ -60,7 +61,7 @@ dotnet build PrintShopImageConverter.sln --no-restore
 dotnet test PrintShopImageConverter.sln --no-build --no-restore
 ```
 
-Magick.NET is pinned to version 14.16.0. Tests generate their own image fixtures and cover intake, inspection, JPG/PNG conversion, color profiles, density, transparency, multi-frame export, collisions, progress, cancellation, settings, and view-model behavior.
+Magick.NET is pinned to version 14.16.0, and PDFtoImage is pinned to version 5.4.0. Tests generate their own fixtures and cover intake, inspection, JPG/PNG conversion, 300-DPI PDF page rendering, color profiles, density, transparency, multi-frame export, collisions, progress, cancellation, settings, and view-model behavior.
 
 ## Release build
 
@@ -90,6 +91,7 @@ The installer is written to `installer\output`. It installs per user, does not r
 - Existing outputs receive `_2`, `_3`, and later suffixes.
 - Completed files remain when a later file fails or the batch is cancelled.
 - Metadata retention is best-effort because JPG and PNG cannot represent every source field.
+- Password-protected PDFs are not supported.
 - Camera RAW, JPEG XL, PDF/TIFF output, editing, resizing, watched folders, and recursive folder scanning are outside version 1.
 
 See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for bundled component attributions.

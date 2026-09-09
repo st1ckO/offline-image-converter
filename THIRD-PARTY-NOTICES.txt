@@ -24,3 +24,34 @@ Magick.NET includes ImageMagick and delegate libraries used to decode and encode
 supported image formats. Their notices and source information are available from
 the Magick.NET and ImageMagick projects above. No endorsement by the named
 projects or contributors is implied.
+
+PDFtoImage 5.4.0
+----------------
+Copyright (c) David Sungaila and contributors.
+
+PDFtoImage is distributed under the MIT License.
+License: https://github.com/sungaila/PDFtoImage/blob/main/LICENSE
+Source: https://github.com/sungaila/PDFtoImage
+
+SkiaSharp 4.150.1
+-----------------
+Copyright (c) 2015-2016 Xamarin, Inc.
+Copyright (c) 2017-2018 Microsoft Corporation.
+
+SkiaSharp is distributed under the MIT License and includes Google's Skia
+graphics library and other third-party components.
+License: https://github.com/mono/SkiaSharp/blob/main/LICENSE.md
+Third-party notices: https://github.com/mono/SkiaSharp/blob/main/THIRD-PARTY-NOTICES.txt
+Source: https://github.com/mono/SkiaSharp
+
+PDFium prebuilt binaries 152.0.7961
+----------------------------------
+Copyright (c) 2017-2025 Benoit Blanchon and contributors.
+
+The bblanchon.PDFium.Win32 package is distributed under the Apache License,
+Version 2.0. It contains PDFium and its bundled third-party components.
+License: https://github.com/bblanchon/pdfium-binaries/blob/master/LICENSE
+PDFium third-party notices: https://pdfium.googlesource.com/pdfium/+/refs/heads/main/third_party/
+Source: https://github.com/bblanchon/pdfium-binaries
+
+No endorsement by the named projects or contributors is implied.
