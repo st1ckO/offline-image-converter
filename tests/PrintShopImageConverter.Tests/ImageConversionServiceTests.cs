@@ -128,6 +128,47 @@ public sealed class ImageConversionServiceTests : IDisposable
         Assert.All(result.OutputPaths, path => Assert.True(File.Exists(path)));
     }
 
+    [Theory]
+    [InlineData(OutputFormat.Jpeg, MagickFormat.Jpeg, ".jpg")]
+    [InlineData(OutputFormat.Png, MagickFormat.Png, ".png")]
+    public async Task Convert_exports_every_pdf_page_at_print_resolution(
+        OutputFormat outputFormat,
+        MagickFormat expectedFormat,
+        string expectedExtension)
+    {
+        var source = TestPdfFactory.Write(
+            Path.Combine(CreateDirectory(), "customer-proof.pdf"),
+            "1 0 0 rg 0 0 72 36 re f",
+            "0 0 1 rg 0 0 72 36 re f");
+
+        var result = await new ImageConversionService().ConvertAsync(source, new ConversionOptions
+        {
+            OutputFormat = outputFormat,
+            DestinationDirectory = Path.Combine(_directory, "output")
+        });
+
+        Assert.True(result.Succeeded, result.Error);
+        Assert.Collection(
+            result.OutputPaths,
+            path => Assert.EndsWith($"customer-proof_001_converted{expectedExtension}", path),
+            path => Assert.EndsWith($"customer-proof_002_converted{expectedExtension}", path));
+
+        using var firstPage = new MagickImage(result.OutputPaths[0]);
+        using var secondPage = new MagickImage(result.OutputPaths[1]);
+        Assert.Equal(expectedFormat, firstPage.Format);
+        Assert.Equal(expectedFormat, secondPage.Format);
+        Assert.Equal(300u, firstPage.Width);
+        Assert.Equal(150u, firstPage.Height);
+        Assert.InRange(firstPage.Density.ChangeUnits(DensityUnit.PixelsPerInch).X, 299.5, 300.5);
+
+        var firstColor = firstPage.GetPixels().GetPixel(150, 75).ToColor();
+        var secondColor = secondPage.GetPixels().GetPixel(150, 75).ToColor();
+        Assert.NotNull(firstColor);
+        Assert.NotNull(secondColor);
+        Assert.True(firstColor.R > firstColor.B);
+        Assert.True(secondColor.B > secondColor.R);
+    }
+
     [Fact]
     public async Task Convert_never_overwrites_an_existing_output()
     {
@@ -188,6 +229,39 @@ public sealed class ImageConversionServiceTests : IDisposable
 
         Assert.False(Directory.Exists(destination) &&
                      Directory.EnumerateFiles(destination, "*.partial").Any());
+    }
+
+    [Fact]
+    public async Task Convert_stops_a_pdf_between_pages_without_leaving_partial_files()
+    {
+        var source = TestPdfFactory.Write(
+            Path.Combine(CreateDirectory(), "cancel-pages.pdf"),
+            "1 0 0 rg 0 0 72 36 re f",
+            "0 1 0 rg 0 0 72 36 re f",
+            "0 0 1 rg 0 0 72 36 re f");
+        var destination = Path.Combine(_directory, "output");
+        using var cancellation = new CancellationTokenSource();
+        var progress = new InlineProgress<ConversionProgress>(update =>
+        {
+            if (update.CompletedFrames == 1)
+            {
+                cancellation.Cancel();
+            }
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new ImageConversionService().ConvertAsync(
+                source,
+                new ConversionOptions
+                {
+                    OutputFormat = OutputFormat.Png,
+                    DestinationDirectory = destination
+                },
+                progress,
+                cancellation.Token));
+
+        Assert.Single(Directory.EnumerateFiles(destination, "*.png"));
+        Assert.Empty(Directory.EnumerateFiles(destination, "*.partial"));
     }
 
     public void Dispose()

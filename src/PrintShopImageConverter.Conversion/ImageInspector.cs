@@ -1,4 +1,6 @@
 using ImageMagick;
+using PDFtoImage.Exceptions;
+using SkiaSharp;
 
 namespace PrintShopImageConverter.Conversion;
 
@@ -36,6 +38,11 @@ public sealed class ImageInspector : IImageInspector
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (PdfRendering.IsPdf(fullPath))
+            {
+                return InspectPdf(fullPath, cancellationToken);
+            }
+
             using var frames = new MagickImageCollection(fullPath);
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -67,7 +74,7 @@ public sealed class ImageInspector : IImageInspector
         {
             throw;
         }
-        catch (Exception exception) when (exception is MagickException or IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception exception) when (exception is MagickException or PdfException or IOException or UnauthorizedAccessException or InvalidDataException or FormatException)
         {
             return new SourceItem
             {
@@ -81,10 +88,48 @@ public sealed class ImageInspector : IImageInspector
         }
     }
 
+    private static SourceItem InspectPdf(string fullPath, CancellationToken cancellationToken)
+    {
+        using var pdf = File.OpenRead(fullPath);
+        var pageSizes = global::PDFtoImage.Conversion.GetPageSizes(pdf, leaveOpen: true);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (pageSizes.Count == 0)
+        {
+            throw new InvalidDataException("The PDF contains no readable pages.");
+        }
+
+        pdf.Position = 0;
+        using var preview = global::PDFtoImage.Conversion.ToImage(
+            pdf,
+            page: 0,
+            leaveOpen: true,
+            options: PdfRendering.CreateThumbnailOptions());
+        cancellationToken.ThrowIfCancellationRequested();
+        using var previewData = preview.Encode(SKEncodedImageFormat.Png, quality: 100);
+
+        var firstPage = pageSizes[0];
+        return new SourceItem
+        {
+            Path = fullPath,
+            DisplayName = Path.GetFileName(fullPath),
+            Format = "PDF",
+            Width = PdfRendering.ToPixelDimension(firstPage.Width),
+            Height = PdfRendering.ToPixelDimension(firstPage.Height),
+            FrameCount = pageSizes.Count,
+            HasAlpha = false,
+            ThumbnailPng = previewData.ToArray(),
+            Status = SourceStatus.Ready
+        };
+    }
+
     private static string ToFriendlyMessage(Exception exception) => exception switch
     {
-        UnauthorizedAccessException => "The image cannot be opened because access was denied.",
-        IOException => "The image could not be read from disk.",
+        UnauthorizedAccessException => "The file cannot be opened because access was denied.",
+        IOException => "The file could not be read from disk.",
+        PdfPasswordProtectedException => "Password-protected PDFs are not supported.",
+        PdfUnsupportedSecuritySchemeException => "The PDF uses an unsupported security scheme.",
+        PdfException => "The PDF is corrupt or could not be opened.",
+        FormatException => "The PDF is corrupt or could not be opened.",
         _ => "The image is corrupt or uses an unsupported codec."
     };
 }

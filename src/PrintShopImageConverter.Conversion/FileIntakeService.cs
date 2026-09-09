@@ -14,7 +14,7 @@ public interface IFileIntakeService
 public sealed class FileIntakeService : IFileIntakeService
 {
     private static readonly HashSet<string> SupportedExtensions = new(
-        [".heic", ".heif", ".avif", ".webp", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".gif"],
+        [".heic", ".heif", ".avif", ".webp", ".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".gif", ".pdf"],
         StringComparer.OrdinalIgnoreCase);
 
     public IntakeResult Collect(IEnumerable<string> droppedPaths, IEnumerable<string>? existingPaths = null)
@@ -83,7 +83,7 @@ public sealed class FileIntakeService : IFileIntakeService
         var normalizedPath = Path.GetFullPath(path);
         if (!IsSupported(normalizedPath))
         {
-            rejected.Add(new RejectedSource(normalizedPath, "Unsupported image format."));
+            rejected.Add(new RejectedSource(normalizedPath, "Unsupported file format."));
             return;
         }
 

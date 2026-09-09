@@ -56,6 +56,38 @@ public sealed class ImageInspectorTests : IDisposable
     }
 
     [Fact]
+    public async Task Inspect_reports_pdf_pages_at_output_resolution()
+    {
+        var path = TestPdfFactory.Write(
+            PathFor("customer.pdf"),
+            "1 0 0 rg 0 0 72 36 re f",
+            "0 0 1 rg 0 0 72 36 re f");
+
+        var result = await new ImageInspector().InspectAsync(path);
+
+        Assert.Equal(SourceStatus.Ready, result.Status);
+        Assert.Equal("PDF", result.Format);
+        Assert.Equal(300u, result.Width);
+        Assert.Equal(150u, result.Height);
+        Assert.Equal(2, result.FrameCount);
+        Assert.False(result.HasAlpha);
+        Assert.NotEmpty(result.ThumbnailPng!);
+    }
+
+    [Fact]
+    public async Task Inspect_keeps_corrupt_pdfs_in_the_queue_with_an_error()
+    {
+        var path = PathFor("broken.pdf");
+        await File.WriteAllTextAsync(path, "not a pdf");
+
+        var result = await new ImageInspector().InspectAsync(path);
+
+        Assert.Equal(SourceStatus.Failed, result.Status);
+        Assert.Contains("PDF", result.Diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, result.FrameCount);
+    }
+
+    [Fact]
     public async Task Inspect_keeps_corrupt_files_in_the_queue_with_an_error()
     {
         var path = PathFor("broken.webp");

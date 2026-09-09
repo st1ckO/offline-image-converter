@@ -1,4 +1,6 @@
 using ImageMagick;
+using PDFtoImage.Exceptions;
+using SkiaSharp;
 
 namespace PrintShopImageConverter.Conversion;
 
@@ -44,11 +46,11 @@ public sealed class ImageConversionService : IConversionService
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentNullException.ThrowIfNull(options);
         return Task.Run(
-            () => Convert(sourcePath, options.Normalize(), progress, cancellationToken),
+            () => ConvertCoreAsync(sourcePath, options.Normalize(), progress, cancellationToken),
             cancellationToken);
     }
 
-    private ConversionResult Convert(
+    private async Task<ConversionResult> ConvertCoreAsync(
         string sourcePath,
         ConversionOptions options,
         IProgress<ConversionProgress>? progress,
@@ -65,6 +67,16 @@ public sealed class ImageConversionService : IConversionService
             }
 
             Directory.CreateDirectory(options.DestinationDirectory);
+            if (PdfRendering.IsPdf(fullSourcePath))
+            {
+                return await ConvertPdfAsync(
+                    fullSourcePath,
+                    options,
+                    outputPaths,
+                    progress,
+                    cancellationToken).ConfigureAwait(false);
+            }
+
             using var images = new MagickImageCollection(fullSourcePath);
             cancellationToken.ThrowIfCancellationRequested();
             if (images.Count == 0)
@@ -115,10 +127,85 @@ public sealed class ImageConversionService : IConversionService
         {
             throw;
         }
-        catch (Exception exception) when (exception is MagickException or IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException)
+        catch (Exception exception) when (exception is MagickException or PdfException or IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException or FormatException)
         {
             return new ConversionResult(fullSourcePath, outputPaths, [], ToFriendlyMessage(exception));
         }
+    }
+
+    private async Task<ConversionResult> ConvertPdfAsync(
+        string sourcePath,
+        ConversionOptions options,
+        List<string> outputPaths,
+        IProgress<ConversionProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        using var pdf = File.OpenRead(sourcePath);
+        var pageCount = global::PDFtoImage.Conversion.GetPageSizes(pdf, leaveOpen: true).Count;
+        cancellationToken.ThrowIfCancellationRequested();
+        if (pageCount == 0)
+        {
+            throw new InvalidDataException("The PDF contains no readable pages.");
+        }
+
+        var extension = options.OutputFormat == OutputFormat.Jpeg ? ".jpg" : ".png";
+        var baseName = Path.GetFileNameWithoutExtension(sourcePath);
+        progress?.Report(new ConversionProgress(
+            sourcePath,
+            0,
+            pageCount,
+            $"Preparing {pageCount} page{(pageCount == 1 ? string.Empty : "s")}."));
+
+        pdf.Position = 0;
+        var pageIndex = 0;
+        await foreach (var bitmap in global::PDFtoImage.Conversion.ToImagesAsync(
+                           pdf,
+                           leaveOpen: true,
+                           options: PdfRendering.CreateOutputOptions(),
+                           cancellationToken: cancellationToken).ConfigureAwait(false))
+        {
+            using (bitmap)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                progress?.Report(new ConversionProgress(
+                    sourcePath,
+                    pageIndex,
+                    pageCount,
+                    $"Converting page {pageIndex + 1} of {pageCount}."));
+
+                var numberedName = pageCount == 1
+                    ? $"{baseName}_converted"
+                    : $"{baseName}_{pageIndex + 1:000}_converted";
+                var outputPath = _outputPathResolver.GetUniquePath(
+                    options.DestinationDirectory,
+                    numberedName,
+                    extension);
+
+                using var encodedPage = bitmap.Encode(SKEncodedImageFormat.Png, quality: 100);
+                using var image = new MagickImage(encodedPage.ToArray());
+                image.Density = new Density(
+                    PdfRendering.OutputDpi,
+                    PdfRendering.OutputDpi,
+                    DensityUnit.PixelsPerInch);
+                ConfigureOutput(image, options);
+                WriteAtomically(image, outputPath, cancellationToken);
+                outputPaths.Add(outputPath);
+            }
+
+            pageIndex++;
+            progress?.Report(new ConversionProgress(
+                sourcePath,
+                pageIndex,
+                pageCount,
+                $"Completed page {pageIndex} of {pageCount}."));
+        }
+
+        if (pageIndex != pageCount)
+        {
+            throw new InvalidDataException("The PDF did not return every expected page.");
+        }
+
+        return new ConversionResult(sourcePath, outputPaths, []);
     }
 
     private static void WriteAtomically(
@@ -190,7 +277,11 @@ public sealed class ImageConversionService : IConversionService
     private static string ToFriendlyMessage(Exception exception) => exception switch
     {
         UnauthorizedAccessException => "The source or destination folder could not be accessed.",
-        IOException => "The image could not be read or written.",
+        IOException => "The file could not be read or written.",
+        PdfPasswordProtectedException => "Password-protected PDFs are not supported.",
+        PdfUnsupportedSecuritySchemeException => "The PDF uses an unsupported security scheme.",
+        PdfException => "The PDF is corrupt or could not be opened.",
+        FormatException => "The PDF is corrupt or could not be opened.",
         InvalidOperationException => exception.Message,
         _ => "The image could not be converted. It may be corrupt or use an unsupported codec."
     };

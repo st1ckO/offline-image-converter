@@ -126,8 +126,8 @@
             </DataGrid>
 
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
-              <TextBlock HorizontalAlignment="Center" FontSize="20" FontWeight="SemiBold" Foreground="#5A6978" Text="Drop images or folders here" />
-              <TextBlock Margin="0,7,0,0" Foreground="#7B8996" Text="HEIC, HEIF, AVIF, WebP, JPG, PNG, TIFF, BMP, and GIF" />
+              <TextBlock HorizontalAlignment="Center" FontSize="20" FontWeight="SemiBold" Foreground="#5A6978" Text="Drop files or folders here" />
+              <TextBlock Margin="0,7,0,0" Foreground="#7B8996" Text="HEIC, HEIF, AVIF, WebP, JPG, PNG, TIFF, BMP, GIF, and PDF" />
               <StackPanel.Style>
                 <Style TargetType="StackPanel">
                   <Setter Property="Visibility" Value="Collapsed" />

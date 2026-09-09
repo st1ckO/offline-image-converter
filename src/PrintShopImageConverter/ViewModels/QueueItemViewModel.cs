@@ -29,8 +29,12 @@ public sealed class QueueItemViewModel : INotifyPropertyChanged
     public ImageSource? Thumbnail { get; }
 
     public string Details => Source.FrameCount > 0
-        ? $"{Source.Width:N0} × {Source.Height:N0}  •  {Source.Format}  •  {Source.FrameCount} frame{(Source.FrameCount == 1 ? string.Empty : "s")}"
+        ? $"{Source.Width:N0} × {Source.Height:N0}  •  {Source.Format}  •  {Source.FrameCount} {ItemUnit}"
         : Source.Format;
+
+    private string ItemUnit => Source.Format.Equals("PDF", StringComparison.OrdinalIgnoreCase)
+        ? $"page{(Source.FrameCount == 1 ? string.Empty : "s")}"
+        : $"frame{(Source.FrameCount == 1 ? string.Empty : "s")}";
 
     public SourceStatus Status
     {

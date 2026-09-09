@@ -16,13 +16,13 @@ public interface IWindowsDialogService
 public sealed class WindowsDialogService : IWindowsDialogService
 {
     private const string ImageFilter =
-        "Supported images|*.heic;*.heif;*.avif;*.webp;*.jpg;*.jpeg;*.png;*.tif;*.tiff;*.bmp;*.gif|All files|*.*";
+        "Supported files|*.heic;*.heif;*.avif;*.webp;*.jpg;*.jpeg;*.png;*.tif;*.tiff;*.bmp;*.gif;*.pdf|All files|*.*";
 
     public IReadOnlyList<string> SelectImageFiles(string initialDirectory)
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Add customer images",
+            Title = "Add customer files",
             Filter = ImageFilter,
             Multiselect = true,
             CheckFileExists = true

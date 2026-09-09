@@ -21,7 +21,7 @@ public sealed class FileIntakeServiceTests : IDisposable
         Assert.Equal([image], result.AcceptedPaths);
         var rejection = Assert.Single(result.RejectedSources);
         Assert.Equal(document, rejection.Path);
-        Assert.Equal("Unsupported image format.", rejection.Reason);
+        Assert.Equal("Unsupported file format.", rejection.Reason);
     }
 
     [Fact]
@@ -57,6 +57,7 @@ public sealed class FileIntakeServiceTests : IDisposable
     [InlineData("photo.bmp")]
     [InlineData("photo.gif")]
     [InlineData("photo.heif")]
+    [InlineData("artwork.pdf")]
     public void IsSupported_recognizes_the_documented_input_set(string filename)
     {
         Assert.True(FileIntakeService.IsSupported(filename));
