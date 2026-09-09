@@ -1,5 +1,5 @@
 #define AppName "Print Shop Image Converter"
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 #define AppPublisher "Print Shop"
 #define AppExeName "Print Shop Image Converter.exe"
 #define PublishDir "..\artifacts\publish\win-x64"
